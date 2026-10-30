@@ -125,7 +125,10 @@ button { font: inherit; color: inherit; }
   position: absolute; width: 86px; height: 86px; margin: -43px 0 0 -43px; padding: 0; border: 0; background: none; cursor: pointer;
 }
 .heart::before { content: ""; position: absolute; left: 14%; right: 14%; bottom: -12px; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(124, 38, 69, .3), transparent); }
-.heart svg { position: relative; width: 100%; height: 100%; will-change: transform; animation: float 3.2s ease-in-out infinite; }
+.heart { animation: pop .8s cubic-bezier(.3, 1.5, .5, 1) .4s backwards; }
+.heart:nth-child(2) { animation-delay: .6s; } .heart:nth-child(3) { animation-delay: .8s; }
+@keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.heart svg { position: relative; width: 100%; height: 100%; animation: float 3.2s ease-in-out infinite; }
 .heart:nth-child(2) svg { animation-delay: -1.1s; } .heart:nth-child(3) svg { animation-delay: -2.2s; }
 .heart::after { content: ""; position: absolute; top: -10px; right: -10px; bottom: -10px; left: -10px; border-radius: 50%; border: 1.5px solid var(--rose); opacity: 0; animation: ring 2.2s ease-out infinite; }
 .heart:focus-visible { outline: 2px solid var(--rose-deep); outline-offset: 6px; border-radius: 50%; }
@@ -232,6 +235,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .leve .icon-btn, .leve .hint, .leve .btn.ghost, .leve .sheet-wrap { -webkit-backdrop-filter: none; backdrop-filter: none; }
 .leve .icon-btn, .leve .hint { background: rgba(255, 252, 251, .92); }
 .leve .t-especial { animation-timing-function: steps(20); }
+.leve .gobo { animation: none; will-change: auto; }
 /* Carregamento: só opacidade e transform, continua suave com o processador ocupado */
 .loader { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 40; display: grid; place-content: center; justify-items: center; gap: 16px; background: var(--ground); color: var(--rose-deep); text-align: center; }
 .loader svg { width: 72px; height: 72px; color: var(--rose); animation: respira 2.4s ease-in-out infinite; will-change: transform, opacity; }
@@ -426,8 +430,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /* ================= Qualidade automática =================
      0 cheio, 3 mais leve. Começa pelo aparelho e desce sozinho se o celular passar de 30 quadros. */
-  var fraco = (navigator.deviceMemory || 8) <= 3 || (navigator.hardwareConcurrency || 8) <= 4;
-  var nivel = fraco ? 1 : 0;
+  function gpuFraca() {
+    try {
+      var g = document.createElement("canvas").getContext("webgl");
+      if (!g) return false;
+      var e = g.getExtension("WEBGL_debug_renderer_info"), r = e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : "";
+      var l = g.getExtension("WEBGL_lose_context"); if (l) l.loseContext();
+      return /Mali-(T|4|G3|G5|G6)|PowerVR|Adreno[^0-9]*([3-5]\d\d|6[0-2]\d)/i.test(r);
+    } catch (e) { return false; }
+  }
+  var fraco = (navigator.deviceMemory || 8) <= 4 || (navigator.hardwareConcurrency || 8) <= 4 || gpuFraca();
+  var nivel = fraco ? 2 : 0;
+  // Quadro lento não pode congelar o relógio das animações: elas sempre andam
+  G.ticker.lagSmoothing(800, 400);
   function aplicarNivel() {
     document.documentElement.classList.toggle("leve", nivel >= 1);
     if (Cena) Cena.qualidade();
@@ -494,7 +509,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     function nota(midi, when, vel, dest) {
       var f = 440 * Math.pow(2, (midi - 69) / 12);
-      [[1, 1], [2.005, .22], [3.01, .07]].forEach(function (pp) {
+      (fraco ? [[1, 1]] : [[1, 1], [2.005, .22], [3.01, .07]]).forEach(function (pp) {
         var o = ac.createOscillator(), g = ac.createGain();
         o.type = "sine"; o.frequency.value = f * pp[0];
         g.gain.setValueAtTime(0, when);
@@ -768,7 +783,7 @@ document.addEventListener("DOMContentLoaded", function () {
     scene.add(new T.HemisphereLight(0xfff7f4, 0xe6d0d4, 1.05));
     var key = new T.DirectionalLight(0xfff1ea, 2.5);
     key.position.set(-3.6, 4.4, 7.5); key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.mapSize.set(fraco ? 512 : 1024, fraco ? 512 : 1024);
     var sc = key.shadow.camera; sc.left = -6; sc.right = 6; sc.top = 6; sc.bottom = -6; sc.near = 1; sc.far = 24;
     key.shadow.bias = -.0005; key.shadow.normalBias = .025;
     scene.add(key);
@@ -1227,7 +1242,6 @@ document.addEventListener("DOMContentLoaded", function () {
     etapa = "coracoes"; marcarPasso(1);
     G.set("#s-hearts", { autoAlpha: 1 });
     blurIn($("hearts-head").children, .22);
-    G.from(".heart", { scale: 0, autoAlpha: 0, duration: 1 * D, stagger: .2 * D, delay: .6 * D, ease: "back.out(2.2)" });
     blurIn($("frase"), 0, 1.2 * D);
   }
   Array.prototype.forEach.call(document.querySelectorAll(".heart"), function (btn) {
@@ -1262,6 +1276,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!Cena) { tituloEntrar(); return; }
     etapa = "env";
     var s = $("s-env");
+    G.set("#gl", { autoAlpha: 1 });
     G.set(s, { autoAlpha: 1 });
     G.set(".env-bottom", { autoAlpha: 0 });
     blurIn(s.querySelectorAll(".env-top > *"), .2, .4 * D);
@@ -1327,6 +1342,7 @@ document.addEventListener("DOMContentLoaded", function () {
     G.set("#card-bar", { autoAlpha: 0 });
     esconder("#pular", .4);
     if (!Cena) { mostrarSem3D(); esconder("#flash", 1.2); mostrar("#card-bar", 1); return; }
+    G.set("#gl", { autoAlpha: 1 });
     G.to("#flash", { autoAlpha: 0, duration: 1.6 * D, ease: "power2.inOut" });
     Cena.entrarCartao(function () {
       G.fromTo("#card-bar", { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: .9 * D, ease: "power3.out" });
@@ -1424,6 +1440,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(function () { if (Cena) Cena.parar(); Cena = null; })
       .then(function () {
         progresso(1);
+        if (Cena) Cena.qualidade();
+        if (fraco) G.set("#gl", { autoAlpha: 0 });
         G.to("#loader", { autoAlpha: 0, duration: 1.2 * D, ease: "sine.inOut" });
         introEntrar();
         medirQuadros();
