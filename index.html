@@ -782,6 +782,167 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ================= Cena 3D ================= */
+  /* 3D-MODULO-INICIO */
+  // Contornos do envelope (iguais aos das abas 3D). Servem para formar a geometria e para desenhar sombras e filetes nas dobras.
+  function contornos(w, h, abaH) {
+    return {
+      esq: [["M", -w, h], ["L", -w, -h], ["Q", -w * .32, -h * .34, -.06, -.02], ["Q", -w * .32, h * .36, -w, h]],
+      dir: [["M", w, h], ["L", w, -h], ["Q", w * .32, -h * .34, .06, -.02], ["Q", w * .32, h * .36, w, h]],
+      baixo: [["M", -w, -h], ["L", w, -h], ["Q", w * .55, -h * .22, .16, .04], ["Q", 0, .11, -.16, .04], ["Q", -w * .55, -h * .22, -w, -h]],
+      aba: [["M", -w, 0], ["L", w, 0], ["Q", w * .5, -abaH * .55, .16, -abaH + .07], ["Q", 0, -abaH - .02, -.16, -abaH + .07], ["Q", -w * .5, -abaH * .55, -w, 0]]
+    };
+  }
+  function deslocar(seg, dy) { return seg.map(function (s) { return s.length === 3 ? [s[0], s[1], s[2] + dy] : [s[0], s[1], s[2] + dy, s[3], s[4] + dy]; }); }
+  function tracar(alvo, seg, fx, fy) {
+    seg.forEach(function (s) {
+      if (s[0] === "M") alvo.moveTo(fx(s[1]), fy(s[2])); else if (s[0] === "L") alvo.lineTo(fx(s[1]), fy(s[2]));
+      else alvo.quadraticCurveTo(fx(s[1]), fy(s[2]), fx(s[3]), fy(s[4]));
+    });
+  }
+
+  // Papel de algodão: manchas de densidade, fibras, grão e relevo gravado (losangos com rosetas)
+  function papelRealista(tam, tom) {
+    var s = tam / 512, c = cnv(tam, tam), x = c.getContext("2d"), a = cnv(tam, tam), y = a.getContext("2d"), i, px, py, r, g;
+    x.fillStyle = tom; x.fillRect(0, 0, tam, tam);
+    y.fillStyle = "rgb(128,128,128)"; y.fillRect(0, 0, tam, tam);
+    for (i = 0; i < 240; i++) {
+      px = rnd(0, tam); py = rnd(0, tam); r = rnd(40, 150) * s; g = x.createRadialGradient(px, py, 0, px, py, r);
+      g.addColorStop(0, Math.random() < .5 ? "rgba(255,255,255,.09)" : "rgba(165,120,130,.05)"); g.addColorStop(1, "rgba(255,255,255,0)");
+      x.fillStyle = g; x.fillRect(px - r, py - r, r * 2, r * 2);
+    }
+    x.lineCap = "round"; y.lineCap = "round";
+    var nf = Math.round(2600 * s * s);
+    for (i = 0; i < nf; i++) {
+      px = rnd(0, tam); py = rnd(0, tam); var ang = rnd(0, 6.283), len = rnd(6, 28) * s, bend = rnd(-6, 6) * s, ex = px + Math.cos(ang) * len, ey = py + Math.sin(ang) * len;
+      x.strokeStyle = Math.random() < .5 ? "rgba(255,255,255,.26)" : "rgba(120,85,95,.08)"; x.lineWidth = rnd(.5, 1.1) * s + .3;
+      x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo((px + ex) / 2 + bend, (py + ey) / 2 - bend, ex, ey); x.stroke();
+      y.strokeStyle = Math.random() < .5 ? "rgba(255,255,255,.4)" : "rgba(0,0,0,.35)"; y.lineWidth = rnd(.5, 1) * s + .3;
+      y.beginPath(); y.moveTo(px, py); y.quadraticCurveTo((px + ex) / 2 + bend, (py + ey) / 2 - bend, ex, ey); y.stroke();
+    }
+    var ng = Math.round(26000 * s * s);
+    for (i = 0; i < ng; i++) {
+      px = rnd(0, tam); py = rnd(0, tam);
+      x.fillStyle = Math.random() < .5 ? "rgba(255,255,255,.16)" : "rgba(110,80,90,.05)"; x.fillRect(px, py, 1.2 * s + .4, 1.2 * s + .4);
+      y.fillStyle = Math.random() < .5 ? "rgba(255,255,255,.22)" : "rgba(0,0,0,.2)"; y.fillRect(px, py, 1.2 * s + .4, 1.2 * s + .4);
+    }
+    // relevo gravado: grade de losangos com uma roseta em cada cruzamento
+    var passo = 64 * s, m, n;
+    x.strokeStyle = "rgba(205,130,150,.07)"; y.strokeStyle = "rgba(255,255,255,.35)"; x.lineWidth = 1.1 * s; y.lineWidth = 1.5 * s;
+    for (m = -12; m <= 24; m++) {
+      x.beginPath(); x.moveTo(m * passo, 0); x.lineTo(m * passo + tam, tam); x.moveTo(m * passo, tam); x.lineTo(m * passo + tam, 0); x.stroke();
+      y.beginPath(); y.moveTo(m * passo, 0); y.lineTo(m * passo + tam, tam); y.moveTo(m * passo, tam); y.lineTo(m * passo + tam, 0); y.stroke();
+    }
+    for (m = 0; m <= tam / (passo / 2) + 1; m++) for (n = 0; n <= tam / (passo / 2) + 1; n++) {
+      if ((m + n) % 2) continue;
+      px = m * passo / 2; py = n * passo / 2;
+      x.strokeStyle = "rgba(205,120,145,.12)"; x.fillStyle = "rgba(205,120,145,.12)"; flor(x, px, py, 7.5 * s, 1.1 * s);
+      y.strokeStyle = "rgba(255,255,255,.75)"; y.fillStyle = "rgba(255,255,255,.75)"; flor(y, px, py, 7.5 * s, 1.5 * s);
+    }
+    return { map: c, altura: a };
+  }
+  // Mapa de relevo em normais a partir de um mapa de altura
+  function alturaParaNormal(altura, forca) {
+    var w = altura.width, h = altura.height, src = altura.getContext("2d").getImageData(0, 0, w, h).data;
+    var out = cnv(w, h), ox = out.getContext("2d"), img = ox.createImageData(w, h), d = img.data, x, y, i;
+    function L(px, py) { return src[(((py + h) % h) * w + ((px + w) % w)) * 4]; }
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      var dx = (L(x + 1, y) - L(x - 1, y)) * forca / 255, dy = (L(x, y + 1) - L(x, y - 1)) * forca / 255, nl = Math.sqrt(dx * dx + dy * dy + 1);
+      i = (y * w + x) * 4; d[i] = (-dx / nl * .5 + .5) * 255; d[i + 1] = (dy / nl * .5 + .5) * 255; d[i + 2] = (1 / nl * .5 + .5) * 255; d[i + 3] = 255;
+    }
+    ox.putImageData(img, 0, 0); return out;
+  }
+  // Cetim: bordas costuradas, fios no sentido do comprimento. horizontal = fita deitada (largura no eixo vertical)
+  function texturaCetim(horizontal) {
+    var A = 128, Lc = 512, c = cnv(A, Lc), x = c.getContext("2d"), a = cnv(A, Lc), y = a.getContext("2d"), i, g = x.createLinearGradient(0, 0, A, 0);
+    g.addColorStop(0, "#BDB0B5"); g.addColorStop(.05, "#E4DADD"); g.addColorStop(.22, "#FFFFFF"); g.addColorStop(.5, "#F6EEF0"); g.addColorStop(.78, "#FFFFFF"); g.addColorStop(.95, "#E4DADD"); g.addColorStop(1, "#BDB0B5");
+    x.fillStyle = g; x.fillRect(0, 0, A, Lc);
+    x.fillStyle = "rgba(140,90,110,.34)"; x.fillRect(A * .07, 0, 1.5, Lc); x.fillRect(A * .93 - 1.5, 0, 1.5, Lc);
+    x.fillStyle = "rgba(255,255,255,.4)"; x.fillRect(A * .07 + 2, 0, 1, Lc); x.fillRect(A * .93 - 3, 0, 1, Lc);
+    y.fillStyle = "rgb(128,128,128)"; y.fillRect(0, 0, A, Lc);
+    y.fillStyle = "rgba(255,255,255,.7)"; y.fillRect(A * .07, 0, 2, Lc); y.fillRect(A * .93 - 2, 0, 2, Lc);
+    for (i = 0; i < 190; i++) {
+      var px = rnd(0, A), wd = rnd(.4, 1.1);
+      x.fillStyle = Math.random() < .5 ? "rgba(255,255,255,.12)" : "rgba(130,90,105,.06)"; x.fillRect(px, 0, wd, Lc);
+      y.fillStyle = Math.random() < .5 ? "rgba(255,255,255,.12)" : "rgba(0,0,0,.12)"; y.fillRect(px, 0, wd, Lc);
+    }
+    if (!horizontal) return { map: c, altura: a };
+    var tc = cnv(Lc, A), ta = cnv(Lc, A), tx = tc.getContext("2d"), ty = ta.getContext("2d");
+    tx.setTransform(0, 1, 1, 0, 0, 0); tx.drawImage(c, 0, 0); ty.setTransform(0, 1, 1, 0, 0, 0); ty.drawImage(a, 0, 0);
+    return { map: tc, altura: ta };
+  }
+  // Fita 3D: f(t) devolve { p: ponto do eixo, w: direção da largura }; M colunas na largura, N linhas no comprimento
+  function faixaGeo(f, N, M, largura, opc) {
+    opc = opc || {};
+    var pos = [], uv = [], idx = [], i, j, t, a, tg, nrm, p, s, p0 = new T.Vector3(), p1 = new T.Vector3();
+    for (i = 0; i <= N; i++) {
+      t = i / N; a = f(t);
+      p0.copy(f(Math.max(0, t - .002)).p); p1.copy(f(Math.min(1, t + .002)).p); tg = p1.sub(p0).normalize();
+      nrm = new T.Vector3().crossVectors(tg, a.w).normalize();
+      for (j = 0; j <= M; j++) {
+        s = j / M; p = a.p.clone().addScaledVector(a.w, (s - .5) * largura(t));
+        if (opc.arco) p.addScaledVector(nrm, opc.arco * (1 - Math.pow(Math.abs(s - .5) * 2, 2)));
+        if (opc.entalhe && i === N) p.addScaledVector(tg, -opc.entalhe * Math.max(0, 1 - Math.abs(s - .5) * 2));
+        pos.push(p.x, p.y, p.z); uv.push(s, t * (opc.rep || 1));
+      }
+    }
+    for (i = 0; i < N; i++) for (j = 0; j < M; j++) { var a0 = i * (M + 1) + j, b0 = a0 + M + 1; idx.push(a0, b0, a0 + 1, a0 + 1, b0, b0 + 1); }
+    var geo = new T.BufferGeometry();
+    geo.setAttribute("position", new T.Float32BufferAttribute(pos, 3)); geo.setAttribute("uv", new T.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx); geo.computeVertexNormals(); return geo;
+  }
+  // Argola do laço: fita em forma de gota, com a largura apontando para fora e um pouco para a frente (a argola "abre" como na vida real)
+  function funcaoLaco(lado, R, Rv, beta, puff) {
+    var cb = Math.cos(beta), sb = Math.sin(beta);
+    return function (t) {
+      var fi = Math.PI + 2 * Math.PI * t, cs = Math.cos(fi), sn = Math.sin(fi), amp = .55 + .45 * (1 + cs) / 2;
+      var X = R * (1 + cs), Y = Rv * sn * amp, dx = X - R, dy = Y, dl = Math.sqrt(dx * dx + dy * dy) || 1; dx /= dl; dy /= dl;
+      return { p: new T.Vector3(lado * (X * cb - Y * sb), X * sb + Y * cb, .02 + puff * Math.sin(Math.PI * t)), w: new T.Vector3(lado * (dx * cb - dy * sb) * .82, (dx * sb + dy * cb) * .82, .58).normalize() };
+    };
+  }
+  // Ponta pendurada, com leve S e torção
+  function funcaoPonta(s) {
+    return function (t) {
+      var tw = s * .6 * Math.sin(Math.PI * t);
+      return { p: new T.Vector3(s * (.05 + .17 * t + .04 * Math.sin(2.2 * Math.PI * t)), -.05 - .52 * t, .05 + .03 * Math.sin(Math.PI * t)), w: new T.Vector3(Math.cos(tw), 0, Math.sin(tw)) };
+    };
+  }
+  function montarLaco(mat) {
+    var g = new T.Group();
+    function peca(geo, z) { var m = new T.Mesh(geo, mat); m.castShadow = true; m.position.z = z || 0; g.add(m); return m; }
+    function lw(k) { return function (t) { return k * (.45 + .55 * Math.sin(Math.PI * t)); }; }
+    [-1, 1].forEach(function (s) {
+      peca(faixaGeo(funcaoPonta(s), 44, 4, function () { return .15; }, { arco: .018, entalhe: .075, rep: 1.3 }), 0);
+      peca(faixaGeo(funcaoLaco(s, .29, .2, .36, .11), 64, 6, lw(.17), { arco: .014, rep: 2 }), 0);
+      peca(faixaGeo(funcaoLaco(s, .2, .135, .1, .15), 56, 6, lw(.14), { arco: .012, rep: 1.5 }), .012);
+    });
+    var no = new T.Mesh(new T.SphereGeometry(.086, 32, 22), mat); no.scale.set(1.4, 1.08, .86); no.position.z = .08; no.castShadow = true; g.add(no);
+    return g;
+  }
+  // Sombras de contato nas dobras e filetes metálicos, desenhados em camadas finas por cima do papel
+  function camadasEnvelope(w, h, EW, EH, abaH, px) {
+    var cs = contornos(w, h, abaH), W = px, H = Math.round(px * EH / EW), un = W / EW, abaEnv = deslocar(cs.aba, h);
+    function fx(v) { return (v + w) / EW * W; }
+    function fy(v) { return (h - v) / EH * H; }
+    function caminho(seg, fyy) { var p = new Path2D(); tracar(p, seg, fx, fyy || fy); p.closePath(); return p; }
+    var sombra = cnv(W, H), x = sombra.getContext("2d");
+    function projetar(seg, cor, blur, dx, dy) { x.save(); x.shadowColor = cor; x.shadowBlur = blur; x.shadowOffsetX = dx; x.shadowOffsetY = dy; x.fillStyle = "#000"; x.fill(caminho(seg)); x.restore(); }
+    function apagar(seg) { x.save(); x.globalCompositeOperation = "destination-out"; x.fillStyle = "#000"; x.fill(caminho(seg)); x.restore(); }
+    projetar(cs.esq, "rgba(80,35,50,.45)", .06 * un, .02 * un, .028 * un); apagar(cs.esq);
+    projetar(cs.dir, "rgba(80,35,50,.45)", .06 * un, .02 * un, .028 * un); apagar(cs.dir);
+    projetar(cs.baixo, "rgba(80,35,50,.5)", .07 * un, .022 * un, .03 * un); apagar(cs.baixo);
+    projetar(abaEnv, "rgba(80,35,50,.55)", .11 * un, .03 * un, .05 * un); apagar(abaEnv);
+    var fo = cnv(W, H), y = fo.getContext("2d");
+    function filete(ctx, cp, d0, t) { ctx.save(); ctx.clip(cp); ctx.strokeStyle = "#fff"; ctx.lineJoin = "round"; ctx.lineWidth = 2 * (d0 + t) * un; ctx.stroke(cp); ctx.globalCompositeOperation = "destination-out"; ctx.lineWidth = 2 * d0 * un; ctx.stroke(cp); ctx.restore(); }
+    [cs.esq, cs.dir].forEach(function (sg) { var cp = caminho(sg); filete(y, cp, .07, .013); filete(y, cp, .115, .006); });
+    y.save(); y.globalCompositeOperation = "destination-out"; y.fillStyle = "#000"; y.fill(caminho(cs.baixo)); y.restore();
+    var cb = caminho(cs.baixo); filete(y, cb, .07, .013); filete(y, cb, .115, .006);
+    var H2 = Math.round(px * abaH / EW), fa = cnv(W, H2), z = fa.getContext("2d");
+    function fya(v) { return -v / abaH * H2; }
+    var ca = new Path2D(); tracar(ca, cs.aba, fx, fya); ca.closePath(); filete(z, ca, .07, .013); filete(z, ca, .115, .006);
+    return { sombra: sombra, filete: fo, fileteAba: fa };
+  }
+  /* 3D-MODULO-FIM */
+
   var Cena = null;
 
   function criarCena() {
@@ -842,25 +1003,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ---------- Texturas do envelope ---------- */
-    var linho = cnv(512, 512), lc = linho.getContext("2d");
-    papel(lc, 512, 512, "#F1E8E3", 5000);
-    lc.globalAlpha = .045; lc.strokeStyle = "#8E6B74";
-    for (var i = 0; i < 512; i += 3) { lc.beginPath(); lc.moveTo(0, i + rnd(-.6, .6)); lc.lineTo(512, i + rnd(-.6, .6)); lc.stroke(); lc.beginPath(); lc.moveTo(i + rnd(-.6, .6), 0); lc.lineTo(i + rnd(-.6, .6), 512); lc.stroke(); }
-    lc.globalAlpha = 1;
+    // papel de algodão: fibras, manchas de densidade e relevo gravado em losangos com rosetas
+    var papelEnv = papelRealista(fraco ? 512 : 1024, "#F6EFEA");
+    var texLinho = tex(papelEnv.map, true, [1 / 3.2, 1 / 3.2]); texLinho.offset.set(.5, .5);
+    var normLinho = tex(alturaParaNormal(papelEnv.altura, fraco ? .7 : 1.1), false, [1 / 3.2, 1 / 3.2]); normLinho.offset.set(.5, .5);
     var forro = cnv(512, 512), fc = forro.getContext("2d");
     fc.fillStyle = "#F4D9E1"; fc.fillRect(0, 0, 512, 512);
     for (var fy = 32, fr = 0; fy < 560; fy += 64, fr++) for (var fx = (fr % 2 ? 32 : 0); fx < 560; fx += 64) {
       fc.strokeStyle = fr % 2 ? "rgba(255,255,255,.85)" : "rgba(199,87,122,.5)"; fc.fillStyle = fc.strokeStyle; flor(fc, fx, fy, 9, 1.8);
     }
 
-    var texLinho = tex(linho, true, [.42, .42]);
     var texForroPlano = tex(forro, true, [2.6, 1.8]);
     var texForroAba = tex(forro, true, [.8, .8]);
-    var bumpLinho = tex(linho, false, [.42, .42]);
 
     var EW = 3.2, EH = 2.24, w = EW / 2, h = EH / 2;
     var envelope = new T.Group(); scene.add(envelope);
-    function matLinho(tom) { return new T.MeshStandardMaterial({ map: texLinho, bumpMap: fraco ? null : bumpLinho, bumpScale: .6, color: tom, roughness: .93 }); }
+    function matLinho(tom) { return new T.MeshStandardMaterial({ map: texLinho, normalMap: normLinho, normalScale: new T.Vector2(.55, .55), color: tom, roughness: .9 }); }
 
     var fundo = new T.Mesh(new T.PlaneGeometry(EW, EH), new T.MeshStandardMaterial({ map: texForroPlano, roughness: .9 }));
     fundo.receiveShadow = true; envelope.add(fundo);
@@ -889,6 +1047,14 @@ document.addEventListener("DOMContentLoaded", function () {
     var abaGeo = new T.ShapeGeometry(sT, 24);
     var abaFora = new T.Mesh(abaGeo, matLinho(0xf7f1ee)); abaFora.castShadow = true; abaFora.receiveShadow = true; abaG.add(abaFora);
     var abaDentro = new T.Mesh(abaGeo, new T.MeshStandardMaterial({ map: texForroAba, roughness: .9, side: T.BackSide })); abaG.add(abaDentro);
+
+    // sombras de contato nas dobras e filetes metálicos (rosé) nas bordas das abas
+    var cam3 = camadasEnvelope(w, h, EW, EH, abaH, fraco ? 1024 : 1536);
+    var planoSombra = new T.Mesh(new T.PlaneGeometry(EW, EH), new T.MeshBasicMaterial({ map: tex(cam3.sombra, true), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+    planoSombra.position.z = .0352; planoSombra.renderOrder = 1; envelope.add(planoSombra);
+    function matFilete(c) { return new T.MeshStandardMaterial({ map: tex(c, true), color: 0xDDA3B2, metalness: 1, roughness: .3, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 }); }
+    var planoFilete = new T.Mesh(new T.PlaneGeometry(EW, EH), matFilete(cam3.filete)); planoFilete.position.z = .0356; planoFilete.renderOrder = 2; envelope.add(planoFilete);
+    var fileteAba = new T.Mesh(new T.PlaneGeometry(EW, abaH), matFilete(cam3.fileteAba)); fileteAba.position.set(0, -abaH / 2, .004); fileteAba.renderOrder = 2; abaG.add(fileteAba);
 
     // etiquetas: nome, selo postal e carimbo
     function decal(c, wd, ht, x, y, z, rot, op) {
@@ -969,18 +1135,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     /* ---------- Fita de cetim e laço ---------- */
-    var matFita = new T.MeshPhysicalMaterial({ color: 0xE3A1B4, roughness: .4, sheen: 1, sheenColor: new T.Color(0xfff0f4), sheenRoughness: .35, clearcoat: .2 });
-    var fitaH = new T.Mesh(new T.BoxGeometry(EW + .02, .17, .01), matFita); fitaH.position.set(0, ySelo, .072);
-    var fitaV = new T.Mesh(new T.BoxGeometry(.17, EH + .02, .01), matFita); fitaV.position.set(0, 0, .07);
+    var cetV = texturaCetim(false), cetH = texturaCetim(true);
+    function matCetim(cet, rep) {
+      return new T.MeshPhysicalMaterial({ color: 0xEBAFC0, map: tex(cet.map, true, rep), normalMap: tex(alturaParaNormal(cet.altura, 3), false, rep), normalScale: new T.Vector2(.7, .7),
+        roughness: .34, sheen: 1, sheenColor: new T.Color(0xfff1f5), sheenRoughness: .3, clearcoat: .2, clearcoatRoughness: .5, side: T.DoubleSide });
+    }
+    var fitaH = new T.Mesh(new T.BoxGeometry(EW + .02, .17, .01), matCetim(cetH, [EW / .6, 1])); fitaH.position.set(0, ySelo, .072);
+    var fitaV = new T.Mesh(new T.BoxGeometry(.17, EH + .02, .01), matCetim(cetV, [1, EH / .6])); fitaV.position.set(0, 0, .07);
     [fitaH, fitaV].forEach(function (m) { m.castShadow = true; m.receiveShadow = true; envelope.add(m); });
-    var laco = new T.Group(); laco.position.set(0, ySelo, .13); envelope.add(laco);
-    [-1, 1].forEach(function (s) {
-      var a = new T.Mesh(new T.TorusGeometry(.2, .055, 18, 56), matFita);
-      a.scale.set(1, .58, .42); a.position.set(s * .2, .03, 0); a.rotation.z = s * .32; a.castShadow = true; laco.add(a);
-      var cauda = new T.Mesh(new T.BoxGeometry(.13, .52, .012), matFita);
-      cauda.position.set(s * .13, -.28, -.02); cauda.rotation.set(-.15, 0, s * .34); cauda.castShadow = true; laco.add(cauda);
-    });
-    var no = new T.Mesh(new T.SphereGeometry(.085, 24, 16), matFita); no.scale.set(1.15, .95, .6); no.castShadow = true; laco.add(no);
+    var laco = montarLaco(matCetim(cetV, [1, 1])); laco.position.set(0, ySelo, .13); envelope.add(laco);
 
     /* ---------- Pétalas 3D ---------- */
     var ps = new T.Shape();
