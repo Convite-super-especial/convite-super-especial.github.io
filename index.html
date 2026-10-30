@@ -903,7 +903,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function funcaoPonta(s) {
     return function (t) {
       var tw = s * .6 * Math.sin(Math.PI * t);
-      return { p: new T.Vector3(s * (.05 + .17 * t + .04 * Math.sin(2.2 * Math.PI * t)), -.05 - .52 * t, .05 + .03 * Math.sin(Math.PI * t)), w: new T.Vector3(Math.cos(tw), 0, Math.sin(tw)) };
+      return { p: new T.Vector3(s * (.05 + .14 * t + .035 * Math.sin(2.2 * Math.PI * t)), -.05 - .43 * t, .05 + .03 * Math.sin(Math.PI * t)), w: new T.Vector3(Math.cos(tw), 0, Math.sin(tw)) };
     };
   }
   function montarLaco(mat) {
@@ -911,10 +911,10 @@ document.addEventListener("DOMContentLoaded", function () {
     function peca(geo, z) { var m = new T.Mesh(geo, mat); m.castShadow = true; m.position.z = z || 0; g.add(m); return m; }
     function lw(k) { return function (t) { return k * (.45 + .55 * Math.sin(Math.PI * t)); }; }
     [-1, 1].forEach(function (s) {
-      peca(faixaGeo(funcaoPonta(s), 44, 4, function () { return .15; }, { arco: .018, entalhe: .075, rep: 1.3 }), 0);
-      peca(faixaGeo(funcaoLaco(s, .31, .22, .34, .12), 72, 6, lw(.2), { arco: .016, rep: 2 }), 0);
+      peca(faixaGeo(funcaoPonta(s), 44, 4, function () { return .18; }, { arco: .02, entalhe: .07, rep: 1.3 }), 0);
+      peca(faixaGeo(funcaoLaco(s, .265, .19, .34, .13), 72, 6, lw(.205), { arco: .018, rep: 2 }), 0);
     });
-    var no = new T.Mesh(new T.SphereGeometry(.086, 32, 22), mat); no.scale.set(1.4, 1.08, .86); no.position.z = .08; no.castShadow = true; g.add(no);
+    var no = new T.Mesh(new T.SphereGeometry(.08, 32, 22), mat); no.scale.set(1.45, 1.12, .9); no.position.z = .08; no.castShadow = true; g.add(no);
     return g;
   }
   // Sombras de contato nas dobras e filetes metálicos, desenhados em camadas finas por cima do papel
@@ -1085,7 +1085,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var cam3 = camadasEnvelope(w, h, EW, EH, abaH, fraco ? 1024 : 1536);
     var planoSombra = new T.Mesh(new T.PlaneGeometry(EW, EH), new T.MeshBasicMaterial({ map: tex(cam3.sombra, true), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
     planoSombra.position.z = .0352; planoSombra.renderOrder = 1; envelope.add(planoSombra);
-    function matFilete(c) { return new T.MeshStandardMaterial({ map: tex(c, true), color: 0xE8BE6E, metalness: 1, roughness: .26, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 }); }
+    function matFilete(c) { return new T.MeshStandardMaterial({ map: tex(c, true), color: 0xA83A60, metalness: .75, roughness: .34, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 }); }
     var planoFilete = new T.Mesh(new T.PlaneGeometry(EW, EH), matFilete(cam3.filete)); planoFilete.position.z = .0356; planoFilete.renderOrder = 2; envelope.add(planoFilete);
     var fileteAba = new T.Mesh(new T.PlaneGeometry(EW, abaH), matFilete(cam3.fileteAba)); fileteAba.position.set(0, -abaH / 2, .004); fileteAba.renderOrder = 2; abaG.add(fileteAba);
 
