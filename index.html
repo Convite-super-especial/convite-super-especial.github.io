@@ -42,7 +42,7 @@ body {
   margin: 0; overflow: hidden; background: var(--ground); color: var(--ink);
   font-family: var(--f-body); font-weight: 300; font-size: 1.0625rem; line-height: 1.6;
   padding-left: var(--gut-l); padding-right: var(--gut-r);
-  -webkit-user-select: none; user-select: none;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
 }
 button { font: inherit; color: inherit; }
 
@@ -449,13 +449,19 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   function fx(px) { return nivel >= 1 ? {} : { filter: "blur(" + px + "px)" }; }
   function medirQuadros() {
-    var ult = 0, soma = 0, n = 0;
+    var ult = 0, soma = 0, n = 0, lentos = 0;
     function q(t) {
       requestAnimationFrame(q);
       var d = t - ult; ult = t;
-      if (document.hidden || d > 300) return;
+      if (document.hidden || d > 3000) { soma = 0; n = 0; return; } // aba em segundo plano não conta; quadro lento conta
       soma += d;
-      if (++n >= 45) { var m = soma / n; soma = 0; n = 0; if (m > 34 && nivel < 3) { nivel++; aplicarNivel(); } }
+      if (++n >= 30) {
+        var m = soma / n; soma = 0; n = 0;
+        if (m > 34 && nivel < 3) { nivel++; aplicarNivel(); }
+        // continua abaixo de uns 14 quadros por segundo mesmo no modo mais leve: segue sem o 3D
+        if (m > 70 && nivel >= 2 && ++lentos >= 2 && window.__semTresD) window.__semTresD();
+        if (m <= 70) lentos = 0;
+      }
     }
     requestAnimationFrame(q);
   }
@@ -1422,14 +1428,15 @@ document.addEventListener("DOMContentLoaded", function () {
   })();
 
   // Se a placa de vídeo falhar, segue em 2D sem travar
-  $("gl").addEventListener("webglcontextlost", function (e) {
-    e.preventDefault();
+  function semTresD() {
     if (!Cena) return;
     Cena.parar(); Cena = null;
     G.set("#gl", { autoAlpha: 0 }); G.set("#alvo", { autoAlpha: 0 });
     if (etapa === "cartao") { G.set("#flash", { autoAlpha: 0 }); mostrarSem3D(); mostrar("#card-bar", .8); }
     else if (["env", "laco", "selo", "abrindo"].indexOf(etapa) > -1) { G.set("#s-env", { autoAlpha: 0 }); tituloEntrar(); }
-  });
+  }
+  window.__semTresD = semTresD;
+  $("gl").addEventListener("webglcontextlost", function (e) { e.preventDefault(); semTresD(); });
 
   /* ================= Início: prepara tudo antes da abertura ================= */
   function passo(fn) { return new Promise(function (ok, erro) { setTimeout(function () { try { ok(fn()); } catch (e) { erro(e); } }, 30); }); }
