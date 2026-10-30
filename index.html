@@ -430,38 +430,35 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /* ================= Qualidade automática =================
      0 cheio, 3 mais leve. Começa pelo aparelho e desce sozinho se o celular passar de 30 quadros. */
-  function gpuFraca() {
-    try {
-      var g = document.createElement("canvas").getContext("webgl");
-      if (!g) return false;
-      var e = g.getExtension("WEBGL_debug_renderer_info"), r = e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : "";
-      var l = g.getExtension("WEBGL_lose_context"); if (l) l.loseContext();
-      return /Mali-(T|4|G3|G5|G6)|PowerVR|Adreno[^0-9]*([3-5]\d\d|6[0-2]\d)/i.test(r);
-    } catch (e) { return false; }
-  }
-  var fraco = (navigator.deviceMemory || 8) <= 4 || (navigator.hardwareConcurrency || 8) <= 4 || gpuFraca();
+  // Começa com tudo ligado. Só baixa se a medição de quadros mostrar travada de verdade.
+  // Endereço com ?q=0 a ?q=3 fixa a qualidade (0 = cheio, 3 = mais leve) e ?q=2d tira o 3D, para testes.
+  var qUrl = (location.search.match(/[?&]q=(\w+)/) || [])[1];
+  var fraco = (navigator.deviceMemory || 8) <= 2 || (navigator.hardwareConcurrency || 8) <= 2;
   var nivel = fraco ? 2 : 0;
+  var fixo = false;
+  if (/^[0-3]$/.test(qUrl || "")) { nivel = +qUrl; fraco = nivel >= 2; fixo = true; }
+  if (qUrl === "2d") fixo = true;
   // Quadro lento não pode congelar o relógio das animações: elas sempre andam
   G.ticker.lagSmoothing(800, 400);
   function aplicarNivel() {
-    document.documentElement.classList.toggle("leve", nivel >= 1);
+    document.documentElement.classList.toggle("leve", nivel >= 2);
     if (Cena) Cena.qualidade();
   }
-  function fx(px) { return nivel >= 1 ? {} : { filter: "blur(" + px + "px)" }; }
+  function fx(px) { return nivel >= 2 ? {} : { filter: "blur(" + px + "px)" }; }
   function medirQuadros() {
-    var ult = 0, soma = 0, n = 0, lentos = 0;
+    if (fixo) return;
+    var ult = 0, soma = 0, n = 0, ruins = 0, lentos = 0;
     function q(t) {
       requestAnimationFrame(q);
       var d = t - ult; ult = t;
-      if (document.hidden || d > 3000) { soma = 0; n = 0; return; } // aba em segundo plano não conta; quadro lento conta
+      if (document.hidden || d > 3000) { soma = 0; n = 0; return; } // aba em segundo plano não conta
       soma += d;
-      if (++n >= 30) {
-        var m = soma / n; soma = 0; n = 0;
-        if (m > 34 && nivel < 3) { nivel++; aplicarNivel(); }
-        // continua abaixo de uns 14 quadros por segundo mesmo no modo mais leve: segue sem o 3D
-        if (m > 70 && nivel >= 2 && ++lentos >= 2 && window.__semTresD) window.__semTresD();
-        if (m <= 70) lentos = 0;
-      }
+      if (++n < 30) return;
+      var m = soma / n; soma = 0; n = 0;
+      // abaixo de uns 30 quadros por segundo em duas medidas seguidas: baixa um nível
+      if (m > 34) { if (++ruins >= 2 && nivel < 3) { nivel++; ruins = 0; aplicarNivel(); } } else ruins = 0;
+      // abaixo de 10 quadros por segundo no nível mais leve: segue sem o 3D
+      if (m > 100 && nivel >= 3) { if (++lentos >= 3 && window.__semTresD) window.__semTresD(); } else lentos = 0;
     }
     requestAnimationFrame(q);
   }
@@ -609,7 +606,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   function festa(x, y, n, spread) {
     if (reduce || !window.confetti || !formaPetala) return;
-    confetti({ origin: { x: x / innerWidth, y: y / innerHeight }, particleCount: Math.round((n || 30) * (nivel >= 1 ? .5 : 1)), spread: spread || 80, startVelocity: 26, gravity: .7, ticks: 220, scalar: 1.2, zIndex: 25,
+    confetti({ origin: { x: x / innerWidth, y: y / innerHeight }, particleCount: Math.round((n || 30) * (nivel >= 2 ? .5 : 1)), spread: spread || 80, startVelocity: 26, gravity: .7, ticks: 220, scalar: 1.2, zIndex: 25,
       colors: ["#F6C9D3", "#EFA7BA", "#C7577A", "#A3385B", "#FFFFFF"], shapes: [formaPetala, formaPetala, formaCoracao], disableForReducedMotion: true });
   }
 
@@ -1046,7 +1043,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (cartaoMesh && idle.on) cartao.position.y = yCartao;
     }
     function nitidez() {
-      var limite = modo === "cartao" ? [2.5, 2, 2, 1.5][nivel] : [2.5, 1.75, 1.25, 1][nivel];
+      var limite = modo === "cartao" ? [2.5, 2.25, 2, 1.5][nivel] : [2.5, 2, 1.5, 1.25][nivel];
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, limite));
       renderer.setSize(innerWidth, innerHeight, false);
     }
@@ -1097,10 +1094,10 @@ document.addEventListener("DOMContentLoaded", function () {
       var dt = Math.min(.05, (agora - ultimo) / 1000); ultimo = agora;
       if (!continuo && umaVez <= 0) return;
       quadro++;
-      if (idle.on && nivel >= 1 && quadro % 2) return; // convite parado: 30 quadros bastam
+      if (idle.on && nivel >= 2 && quadro % 2) return; // convite parado: 30 quadros bastam
       atualizarPetalas(dt, agora / 1000);
       if (idle.on && cartaoMesh) {
-        flutua += dt * (nivel >= 1 ? 2 : 1);
+        flutua += dt * (nivel >= 2 ? 2 : 1);
         var ty = arr.base + arr.ry + Math.sin(flutua * .5) * .025, tx = arr.rx + Math.sin(flutua * .7 + 1) * .015;
         var k = arr.ativo ? .25 : .06;
         rotAtual.y += (ty - rotAtual.y) * k; rotAtual.x += (tx - rotAtual.x) * k;
@@ -1442,7 +1439,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function passo(fn) { return new Promise(function (ok, erro) { setTimeout(function () { try { ok(fn()); } catch (e) { erro(e); } }, 30); }); }
   function progresso(p) { $("loader-barra").style.transform = "scaleX(" + p + ")"; }
   function iniciar() {
-    fontes.then(function () { progresso(.3); return passo(function () { Cena = criarCena(); }); })
+    fontes.then(function () { progresso(.3); return passo(function () { Cena = qUrl === "2d" ? null : criarCena(); }); })
       .then(function () { progresso(.55); return Cena ? passo(function () { return Cena.preparar(); }) : null; })
       .catch(function () { if (Cena) Cena.parar(); Cena = null; })
       .then(function () {
