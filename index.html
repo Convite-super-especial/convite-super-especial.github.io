@@ -912,8 +912,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function lw(k) { return function (t) { return k * (.45 + .55 * Math.sin(Math.PI * t)); }; }
     [-1, 1].forEach(function (s) {
       peca(faixaGeo(funcaoPonta(s), 44, 4, function () { return .15; }, { arco: .018, entalhe: .075, rep: 1.3 }), 0);
-      peca(faixaGeo(funcaoLaco(s, .29, .2, .36, .11), 64, 6, lw(.17), { arco: .014, rep: 2 }), 0);
-      peca(faixaGeo(funcaoLaco(s, .2, .135, .1, .15), 56, 6, lw(.14), { arco: .012, rep: 1.5 }), .012);
+      peca(faixaGeo(funcaoLaco(s, .31, .22, .34, .12), 72, 6, lw(.2), { arco: .016, rep: 2 }), 0);
     });
     var no = new T.Mesh(new T.SphereGeometry(.086, 32, 22), mat); no.scale.set(1.4, 1.08, .86); no.position.z = .08; no.castShadow = true; g.add(no);
     return g;
@@ -939,7 +938,41 @@ document.addEventListener("DOMContentLoaded", function () {
     var H2 = Math.round(px * abaH / EW), fa = cnv(W, H2), z = fa.getContext("2d");
     function fya(v) { return -v / abaH * H2; }
     var ca = new Path2D(); tracar(ca, cs.aba, fx, fya); ca.closePath(); filete(z, ca, .07, .013); filete(z, ca, .115, .006);
+    // ramos de louro: dois ao longo das bordas da aba, e dois em cada canto de baixo
+    function Bz(t, A, C, D) { var u = 1 - t; return { x: u * u * A[0] + 2 * u * t * C[0] + t * t * D[0], y: u * u * A[1] + 2 * u * t * C[1] + t * t * D[1] }; }
+    var A0 = [-w, 0], C0 = [-w * .5, -abaH * .55], D0 = [-.16, -abaH + .07], off = { x: .135, y: .15 };
+    [1, -1].forEach(function (lado) {
+      var p0 = Bz(.1, A0, C0, D0), p2 = Bz(.88, A0, C0, D0), m = Bz(.5, A0, C0, D0);
+      p0.x += off.x; p0.y += off.y; p2.x += off.x; p2.y += off.y; m.x += off.x; m.y += off.y;
+      var p1 = { x: 2 * m.x - (p0.x + p2.x) / 2, y: 2 * m.y - (p0.y + p2.y) / 2 };
+      function cv(p) { return { x: fx(lado * p.x), y: fya(p.y) }; }
+      ramoLouro(z, cv(p0), cv(p1), cv(p2), un, 12, .15);
+      function cb(x, yy) { return { x: fx(lado * x), y: fy(yy) }; }
+      ramoLouro(y, cb(-w + .1, -.02), cb(-w + .3, .42), cb(-w + .86, .34), un, 10, .13);
+    });
     return { sombra: sombra, filete: fo, fileteAba: fa };
+  }
+  // Folha de louro (preenchida) com a nervura central gravada
+  function folha(ctx, x, y, ang, len, larg) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(len * .45, -larg, len, 0); ctx.quadraticCurveTo(len * .45, larg, 0, 0); ctx.fill();
+    ctx.globalCompositeOperation = "destination-out"; ctx.lineWidth = Math.max(.8, len * .035); ctx.beginPath(); ctx.moveTo(len * .1, 0); ctx.lineTo(len * .86, 0); ctx.stroke();
+    ctx.restore();
+  }
+  // Ramo de louro: caule em curva (P0, P1, P2 em pixels) com folhas em pares que diminuem até a ponta
+  function ramoLouro(ctx, P0, P1, P2, un, n, tam) {
+    ctx.save(); ctx.fillStyle = "#fff"; ctx.strokeStyle = "#fff"; ctx.lineCap = "round"; ctx.lineWidth = Math.max(1.4, .0075 * un);
+    ctx.beginPath(); ctx.moveTo(P0.x, P0.y); ctx.quadraticCurveTo(P1.x, P1.y, P2.x, P2.y); ctx.stroke();
+    var i, t, u, x, y, tx, ty, ang = 0, sz = tam * un;
+    for (i = 1; i <= n; i++) {
+      t = i / (n + 1); u = 1 - t;
+      x = u * u * P0.x + 2 * u * t * P1.x + t * t * P2.x; y = u * u * P0.y + 2 * u * t * P1.y + t * t * P2.y;
+      tx = 2 * u * (P1.x - P0.x) + 2 * t * (P2.x - P1.x); ty = 2 * u * (P1.y - P0.y) + 2 * t * (P2.y - P1.y); ang = Math.atan2(ty, tx);
+      var k = sz * (1 - .5 * t);
+      folha(ctx, x, y, ang + .62, k, k * .36); folha(ctx, x, y, ang - .62, k, k * .36);
+    }
+    folha(ctx, P2.x, P2.y, ang, sz * .5, sz * .17);
+    ctx.restore();
   }
   /* 3D-MODULO-FIM */
 
@@ -1004,7 +1037,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     /* ---------- Texturas do envelope ---------- */
     // papel de algodão: fibras, manchas de densidade e relevo gravado em losangos com rosetas
-    var papelEnv = papelRealista(fraco ? 512 : 1024, "#F6EFEA");
+    var papelEnv = papelRealista(fraco ? 512 : 1024, "#EDC4C6");
     var texLinho = tex(papelEnv.map, true, [1 / 3.2, 1 / 3.2]); texLinho.offset.set(.5, .5);
     var normLinho = tex(alturaParaNormal(papelEnv.altura, fraco ? .7 : 1.1), false, [1 / 3.2, 1 / 3.2]); normLinho.offset.set(.5, .5);
     var forro = cnv(512, 512), fc = forro.getContext("2d");
@@ -1018,7 +1051,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var EW = 3.2, EH = 2.24, w = EW / 2, h = EH / 2;
     var envelope = new T.Group(); scene.add(envelope);
-    function matLinho(tom) { return new T.MeshStandardMaterial({ map: texLinho, normalMap: normLinho, normalScale: new T.Vector2(.55, .55), color: tom, roughness: .9 }); }
+    function matLinho(tom) { return new T.MeshPhysicalMaterial({ map: texLinho, normalMap: normLinho, normalScale: new T.Vector2(.55, .55), color: tom, roughness: .6, sheen: 1, sheenColor: new T.Color(0xFFE9EE), sheenRoughness: .4, clearcoat: .22, clearcoatRoughness: .4 }); }
 
     var fundo = new T.Mesh(new T.PlaneGeometry(EW, EH), new T.MeshStandardMaterial({ map: texForroPlano, roughness: .9 }));
     fundo.receiveShadow = true; envelope.add(fundo);
@@ -1036,23 +1069,23 @@ document.addEventListener("DOMContentLoaded", function () {
     var sL = new T.Shape(); sL.moveTo(-w, h); sL.lineTo(-w, -h); sL.quadraticCurveTo(-w * .32, -h * .34, -.06, -.02); sL.quadraticCurveTo(-w * .32, h * .36, -w, h);
     var sR = new T.Shape(); sR.moveTo(w, h); sR.lineTo(w, -h); sR.quadraticCurveTo(w * .32, -h * .34, .06, -.02); sR.quadraticCurveTo(w * .32, h * .36, w, h);
     var sB = new T.Shape(); sB.moveTo(-w, -h); sB.lineTo(w, -h); sB.quadraticCurveTo(w * .55, -h * .22, .16, .04); sB.quadraticCurveTo(0, .11, -.16, .04); sB.quadraticCurveTo(-w * .55, -h * .22, -w, -h);
-    shapeMesh(sL, matLinho(0xf3ece8), .026);
-    shapeMesh(sR, matLinho(0xf3ece8), .026);
-    shapeMesh(sB, matLinho(0xffffff), .034);
+    shapeMesh(sL, matLinho(0xF4DEDC), .026);
+    shapeMesh(sR, matLinho(0xF4DEDC), .026);
+    shapeMesh(sB, matLinho(0xFFFFFF), .034);
 
     // aba de cima, com dobradiça na borda superior
     var abaH = EH * .62;
     var sT = new T.Shape(); sT.moveTo(-w, 0); sT.lineTo(w, 0); sT.quadraticCurveTo(w * .5, -abaH * .55, .16, -abaH + .07); sT.quadraticCurveTo(0, -abaH - .02, -.16, -abaH + .07); sT.quadraticCurveTo(-w * .5, -abaH * .55, -w, 0);
     var abaG = new T.Group(); abaG.position.set(0, h, .044); envelope.add(abaG);
     var abaGeo = new T.ShapeGeometry(sT, 24);
-    var abaFora = new T.Mesh(abaGeo, matLinho(0xf7f1ee)); abaFora.castShadow = true; abaFora.receiveShadow = true; abaG.add(abaFora);
+    var abaFora = new T.Mesh(abaGeo, matLinho(0xFFF1EF)); abaFora.castShadow = true; abaFora.receiveShadow = true; abaG.add(abaFora);
     var abaDentro = new T.Mesh(abaGeo, new T.MeshStandardMaterial({ map: texForroAba, roughness: .9, side: T.BackSide })); abaG.add(abaDentro);
 
     // sombras de contato nas dobras e filetes metálicos (rosé) nas bordas das abas
     var cam3 = camadasEnvelope(w, h, EW, EH, abaH, fraco ? 1024 : 1536);
     var planoSombra = new T.Mesh(new T.PlaneGeometry(EW, EH), new T.MeshBasicMaterial({ map: tex(cam3.sombra, true), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
     planoSombra.position.z = .0352; planoSombra.renderOrder = 1; envelope.add(planoSombra);
-    function matFilete(c) { return new T.MeshStandardMaterial({ map: tex(c, true), color: 0xDDA3B2, metalness: 1, roughness: .3, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 }); }
+    function matFilete(c) { return new T.MeshStandardMaterial({ map: tex(c, true), color: 0xE8BE6E, metalness: 1, roughness: .26, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 }); }
     var planoFilete = new T.Mesh(new T.PlaneGeometry(EW, EH), matFilete(cam3.filete)); planoFilete.position.z = .0356; planoFilete.renderOrder = 2; envelope.add(planoFilete);
     var fileteAba = new T.Mesh(new T.PlaneGeometry(EW, abaH), matFilete(cam3.fileteAba)); fileteAba.position.set(0, -abaH / 2, .004); fileteAba.renderOrder = 2; abaG.add(fileteAba);
 
