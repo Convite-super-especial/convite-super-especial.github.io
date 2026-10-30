@@ -259,15 +259,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   #fallback { padding-bottom: 0 !important; padding-right: 240px; }
   .fallback-card { width: calc(92vh * .714); }
 }
-@media (prefers-reduced-motion: reduce) {
-  html:not(.anim) *, html:not(.anim) *::before, html:not(.anim) *::after { animation: none !important; transition-duration: .01ms !important; }
-}
-.escolha { display: grid; gap: 12px; justify-items: center; padding: 0 24px; max-width: 360px; }
-.loader .escolha p { margin: 0 0 6px; font-size: 1.05rem; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink); line-height: 1.5; }
-.loader .escolha b { font-weight: 500; color: var(--rose-deep); }
-.escolha small { color: var(--ink-soft); font-size: .84rem; line-height: 1.4; }
-.escolha .btn { width: 100%; }
-.loader.pergunta > :not(.escolha) { display: none; }
+
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -277,12 +269,6 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   <svg viewBox="-60 -60 120 120" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2"><ellipse rx="13" ry="27" cy="-22"/><ellipse rx="13" ry="27" cy="-22" transform="rotate(72)"/><ellipse rx="13" ry="27" cy="-22" transform="rotate(144)"/><ellipse rx="13" ry="27" cy="-22" transform="rotate(216)"/><ellipse rx="13" ry="27" cy="-22" transform="rotate(288)"/></g><circle r="6" fill="#A3385B"/></svg>
   <p>Preparando sua surpresa</p>
   <span class="loader-trilho"><span id="loader-barra"></span></span>
-  <div class="escolha" id="escolha" hidden>
-    <p>Seu celular está com a opção <b>remover animações</b> ligada. O convite é cheio de animações.</p>
-    <button class="btn" id="com-anim" type="button"><span>Ver com animações</span></button>
-    <button class="btn ghost" id="sem-anim" type="button"><span>Ver sem animações</span></button>
-    <small>Você pode mudar isso depois nas configurações do celular, em Acessibilidade.</small>
-  </div>
 </div>
 <svg class="gobo" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
   <defs><filter id="blur-gobo" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="16"/></filter></defs>
@@ -435,7 +421,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var $ = function (id) { return document.getElementById(id); };
   var G = window.gsap, T = window.THREE;
   if (!G) { document.body.innerHTML = "<p style='padding:40px;text-align:center'>Não foi possível carregar a animação. Recarregue a página.</p>"; return; }
-  var reduce = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var reduce = false; // o convite sempre roda com animações, em qualquer celular
   var CFG = [34,110,52,182,4,42,121,255,17,70,56,146], CHV = [23,91,7,142,61,18,77,205,39,116,8,170];
   function contato() { return CFG.map(function (c, i) { return String.fromCharCode(c ^ CHV[i]); }).join(""); }
   var PRAZO = new Date("2026-11-06T23:59:59-03:00");
@@ -1462,22 +1448,13 @@ document.addEventListener("DOMContentLoaded", function () {
     setInterval(function () {
       var gpu = "?";
       try { var g = $("gl").getContext("webgl2") || $("gl").getContext("webgl"), x = g && g.getExtension("WEBGL_debug_renderer_info"); gpu = g ? (x ? g.getParameter(x.UNMASKED_RENDERER_WEBGL) : "ok") : "sem webgl"; } catch (e) {}
-      dbg.textContent = "etapa " + etapa + " | 3D " + (Cena ? "ligado" : "DESLIGADO") + " | nivel " + nivel + (fixo ? " (fixo)" : "") + "\n" + fpsV + " fps | DPR " + (window.devicePixelRatio || 1) + " | tela " + innerWidth + "x" + innerHeight + "\nGPU " + gpu + "\nmem " + (navigator.deviceMemory || "?") + "GB | nucleos " + (navigator.hardwareConcurrency || "?") + " | escuro " + (matchMedia("(prefers-color-scheme: dark)").matches ? "sim" : "nao") + " | mov.reduzido " + (matchMedia("(prefers-reduced-motion: reduce)").matches ? "SIM" : "nao") + "\n" + navigator.userAgent.replace(/^Mozilla\/5.0 /, "").slice(0, 130);
+      dbg.textContent = "etapa " + etapa + " | 3D " + (Cena ? "ligado" : "DESLIGADO") + " | nivel " + nivel + (fixo ? " (fixo)" : "") + "\n" + fpsV + " fps | DPR " + (window.devicePixelRatio || 1) + " | tela " + innerWidth + "x" + innerHeight + "\nGPU " + gpu + "\nmem " + (navigator.deviceMemory || "?") + "GB | nucleos " + (navigator.hardwareConcurrency || "?") + " | escuro " + (matchMedia("(prefers-color-scheme: dark)").matches ? "sim" : "nao") + "\n" + navigator.userAgent.replace(/^Mozilla\/5.0 /, "").slice(0, 130);
     }, 1000);
   }
 
   /* ================= Início: prepara tudo antes da abertura ================= */
   function passo(fn) { return new Promise(function (ok, erro) { setTimeout(function () { try { ok(fn()); } catch (e) { erro(e); } }, 30); }); }
   function progresso(p) { $("loader-barra").style.transform = "scaleX(" + p + ")"; }
-  function perguntarMovimento() {
-    if (!reduce) return Promise.resolve();
-    return new Promise(function (ok) {
-      function fim() { $("escolha").hidden = true; $("loader").classList.remove("pergunta"); ok(); }
-      $("loader").classList.add("pergunta"); $("escolha").hidden = false;
-      $("com-anim").addEventListener("click", function () { reduce = false; D = 1; document.documentElement.classList.add("anim"); fim(); });
-      $("sem-anim").addEventListener("click", fim);
-    });
-  }
   function iniciar() {
     fontes.then(function () { progresso(.3); return passo(function () { Cena = qUrl === "2d" ? null : criarCena(); }); })
       .then(function () { progresso(.55); return Cena ? passo(function () { return Cena.preparar(); }) : null; })
@@ -1485,9 +1462,6 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(function () {
         progresso(1);
         if (Cena) Cena.qualidade();
-        return perguntarMovimento();
-      })
-      .then(function () {
         G.to("#loader", { autoAlpha: 0, duration: 1.2 * D, ease: "sine.inOut" });
         introEntrar();
       });
