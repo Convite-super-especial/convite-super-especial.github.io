@@ -1524,24 +1524,28 @@ document.addEventListener("DOMContentLoaded", function () {
       etapa = "laco";
       mostrar(".env-bottom");
       $("alvo").setAttribute("aria-label", "Desamarrar o laço");
-      mostrar("#alvo");
+      mostrarAlvo(.8);
     });
   }
+  // O anel de toque só existe nas etapas do laço e do selo. Esconder cancela qualquer animação anterior dele.
+  function mostrarAlvo(d) { var el = $("alvo"); G.killTweensOf(el); el.hidden = false; G.fromTo(el, { autoAlpha: 0 }, { autoAlpha: 1, duration: d * D, ease: "power2.out" }); }
+  function esconderAlvo(d) { var el = $("alvo"); G.killTweensOf(el); G.to(el, { autoAlpha: 0, duration: d * D, onComplete: function () { el.hidden = true; } }); }
+  function matarAlvo() { var el = $("alvo"); G.killTweensOf(el); G.set(el, { autoAlpha: 0 }); el.hidden = true; }
   function acaoEnvelope() {
     if (etapa === "laco") {
       etapa = "env";
-      esconder("#alvo", .3);
+      esconderAlvo(.3);
       Som.whoosh(1);
       Cena.desamarrar(function () {
         etapa = "selo";
         $("env-hint-txt").innerHTML = "Agora toque no <b>selo de cera</b>";
         G.fromTo("#env-hint", { scale: .92 }, { scale: 1, duration: .6, ease: "back.out(2.5)" });
         $("alvo").setAttribute("aria-label", "Abrir o selo de cera");
-        mostrar("#alvo", .5);
+        if (etapa === "selo") mostrarAlvo(.5);
       });
     } else if (etapa === "selo") {
       etapa = "abrindo";
-      esconder("#alvo", .2);
+      esconderAlvo(.2);
       esconder("#s-env", .6);
       Cena.abrir(tituloEntrar);
     }
@@ -1555,7 +1559,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // 4. Título
   function tituloEntrar() { // a tela "Você recebeu um convite especial" foi retirada: do envelope vai direto ao convite
     if (etapa === "titulo" || etapa === "cartao") return;
-    etapa = "titulo"; marcarPasso(3);
+    etapa = "titulo"; marcarPasso(3); matarAlvo();
     G.timeline()
       .to("#flash", { autoAlpha: 1, duration: 1.1 * D, ease: "power2.inOut" })
       .add(function () { if (Cena) Cena.paraCartao(); })
@@ -1564,7 +1568,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // 5. Convite
   function cartaoEntrar() {
-    etapa = "cartao";
+    etapa = "cartao"; matarAlvo();
     G.set("#s-title", { autoAlpha: 0 });
     G.set("#s-card", { autoAlpha: 1 });
     G.set("#card-bar", { autoAlpha: 0 });
@@ -1592,7 +1596,7 @@ document.addEventListener("DOMContentLoaded", function () {
   $("pular").addEventListener("click", function () {
     if (etapa === "cartao") return;
     G.globalTimeline.getChildren(true, true, true).forEach(function (t) { t.kill(); });
-    ["#s-intro", "#s-hearts", "#s-env", "#s-title", "#alvo"].forEach(function (q) { G.set(q, { autoAlpha: 0 }); });
+    ["#s-intro", "#s-hearts", "#s-env", "#s-title"].forEach(function (q) { G.set(q, { autoAlpha: 0 }); }); matarAlvo();
     if (!Som.ligado()) { Som.ligar(); marcarSom(); }
     marcarPasso(3);
     etapa = "cartao";
@@ -1653,7 +1657,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function semTresD() {
     if (!Cena) return;
     Cena.parar(); Cena = null;
-    G.set("#gl", { autoAlpha: 0 }); G.set("#alvo", { autoAlpha: 0 });
+    G.set("#gl", { autoAlpha: 0 }); matarAlvo();
     if (etapa === "cartao") { G.set("#flash", { autoAlpha: 0 }); mostrarSem3D(); mostrar("#card-bar", .8); }
     else if (["env", "laco", "selo", "abrindo"].indexOf(etapa) > -1) { G.set("#s-env", { autoAlpha: 0 }); tituloEntrar(); }
   }
