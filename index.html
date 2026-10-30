@@ -342,8 +342,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   <!-- 3. Envelope -->
   <section class="scene" id="s-env" aria-label="Envelope">
     <div class="env-top">
-      <p class="eyebrow" id="env-eyebrow">Chegou para você</p>
-      <h2 class="h2" id="env-title">Um envelope <em>especial</em></h2>
+      <h2 class="h2" id="env-title">Abra e descubra <em>o que temos pra você!</em></h2>
     </div>
     <div class="env-bottom">
       <p class="hint" id="env-hint" aria-live="polite">
@@ -1321,7 +1320,6 @@ document.addEventListener("DOMContentLoaded", function () {
       Som.whoosh(1);
       Cena.desamarrar(function () {
         etapa = "selo";
-        $("env-eyebrow").textContent = "Quase lá";
         $("env-hint-txt").innerHTML = "Agora toque no <b>selo de cera</b>";
         G.fromTo("#env-hint", { scale: .92 }, { scale: 1, duration: .6, ease: "back.out(2.5)" });
         $("alvo").setAttribute("aria-label", "Abrir o selo de cera");
@@ -1341,22 +1339,12 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // 4. Título
-  function tituloEntrar() {
+  function tituloEntrar() { // a tela "Você recebeu um convite especial" foi retirada: do envelope vai direto ao convite
     if (etapa === "titulo" || etapa === "cartao") return;
     etapa = "titulo"; marcarPasso(3);
-    var s = $("s-title");
     G.timeline()
       .to("#flash", { autoAlpha: 1, duration: 1.1 * D, ease: "power2.inOut" })
       .add(function () { if (Cena) Cena.paraCartao(); })
-      .set(s, { autoAlpha: 1 })
-      .fromTo("#t-eyebrow", { autoAlpha: 0, letterSpacing: "1.1em" }, { autoAlpha: 1, letterSpacing: ".5em", duration: 1.6 * D, ease: "power3.out" })
-      .fromTo("#t-convite", Object.assign({ autoAlpha: 0, letterSpacing: "1em" }, fx(14)), Object.assign({ autoAlpha: 1, letterSpacing: ".3em", duration: 1.8 * D, ease: "power3.out", clearProps: "filter" }, fx(0)), "-=1.2")
-      .fromTo("#t-especial", { autoAlpha: 1, clipPath: "inset(-30% 100% -30% 0)" }, { clipPath: "inset(-30% -5% -30% 0)", duration: 2 * D, ease: "power1.inOut" }, "-=1")
-      .fromTo("#t-line", { scaleX: 0 }, { scaleX: 1, duration: 1.2 * D, ease: "power3.out" }, "-=.8")
-      .add(blurIn([$("t-para"), $("t-data")], .25), "-=.9")
-      .add(function () { Som.chime(); }, "-=1.6")
-      .to({}, { duration: 1.8 * D })
-      .to(s.children, Object.assign({ autoAlpha: 0, y: -24, duration: .9 * D, stagger: .07 * D, ease: "power2.in" }, fx(8)))
       .add(cartaoEntrar);
   }
 
