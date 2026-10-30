@@ -368,7 +368,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
     <div class="vh" id="card-text">
       <p>Festa do Terceirão. Queremos você com a gente neste dia tão especial.</p>
       <p>Estamos preparando um momento lindo, cheio de detalhes pensados com carinho. Ele só fica completo com você aqui.</p>
-      <p>Data: 11 de dezembro. Horário: em breve. Local: em breve. Cor da roupa: livre, você escolhe.</p>
+      <p>Data: 11 de dezembro. Horário: em breve. Local: em breve. Cor da roupa: mulher, vestido azul marinho; homem, calça preta e blusa azul marinho.</p>
       <p>Confirme sua presença até 06 de novembro pelo WhatsApp, no botão Confirmar presença.</p>
       <p>Convite individual.</p>
     </div>
@@ -726,25 +726,40 @@ document.addEventListener("DOMContentLoaded", function () {
     a.foil(function (c) { c.fillText("neste dia tão especial", cx, 728); });
     a.fonte("500 24px Jost"); a.tinta(K.deep, function (c) { espacado(c, "FESTA DO TERCEIRÃO", cx, 812, 8); });
     a.fonte("italic 400 84px 'DM Serif Display'"); a.foil(function (c) { c.fillText("11 de dezembro", cx, 904); });
-    a.fonte("400 40px Jost");
-    var linhas = quebrar(X.map, "Estamos preparando um momento lindo, cheio de detalhes pensados com carinho. Ele só fica completo com você aqui.", 840);
-    a.tinta("#3E3135", function (c) { linhas.forEach(function (l, i) { c.fillText(l, cx, 980 + i * 58); }); });
-    var yb = 1150, colW = (w - 220) / 3;
+    a.fonte("400 38px Jost");
+    var linhas = quebrar(X.map, "Estamos preparando um momento lindo, cheio de carinho. Ele só fica completo com você.", 900);
+    a.tinta("#3E3135", function (c) { linhas.forEach(function (l, i) { c.fillText(l, cx, 980 + i * 54); }); });
+    // faixa 1: horário e local lado a esquerda e direita; faixa 2: a roupa, com letra grande
+    var yb = 1070, cxs = [355, 845];
     a.tinta("#D99AAE", function (c) {
       c.lineWidth = 2;
-      c.beginPath(); c.moveTo(110, yb - 8); c.lineTo(w - 110, yb - 8); c.moveTo(110, yb + 196); c.lineTo(w - 110, yb + 196);
-      c.moveTo(110 + colW, yb + 26); c.lineTo(110 + colW, yb + 166); c.moveTo(110 + colW * 2, yb + 26); c.lineTo(110 + colW * 2, yb + 166); c.stroke();
+      c.beginPath(); c.moveTo(110, yb - 8); c.lineTo(w - 110, yb - 8); c.moveTo(110, yb + 176); c.lineTo(w - 110, yb + 176);
+      c.moveTo(110, yb + 340); c.lineTo(w - 110, yb + 340); c.moveTo(600, yb + 26); c.lineTo(600, yb + 146); c.stroke();
     });
-    [["HORÁRIO", "Em breve", "aguarde novidades"], ["LOCAL", "Em breve", "será revelado"], ["COR DA ROUPA", "Livre", "você escolhe"]].forEach(function (it, i) {
-      var x = 110 + colW * i + colW / 2;
-      a.fonte("500 23px Jost"); a.tinta(K.deep, function (c) { espacado(c, it[0], x, yb + 54, 5); });
-      a.fonte("italic 400 56px 'DM Serif Display'"); a.foil(function (c) { c.fillText(it[1], x, yb + 122); });
-      a.fonte("400 27px Jost"); a.tinta("#5A474E", function (c) { c.fillText(it[2], x, yb + 162); });
+    [["HORÁRIO", "Em breve", "aguarde novidades"], ["LOCAL", "Em breve", "será revelado"]].forEach(function (it, i) {
+      var x = cxs[i];
+      a.fonte("500 23px Jost"); a.tinta(K.deep, function (c) { espacado(c, it[0], x, yb + 48, 5); });
+      a.fonte("italic 400 56px 'DM Serif Display'"); a.foil(function (c) { c.fillText(it[1], x, yb + 112); });
+      a.fonte("400 27px Jost"); a.tinta("#5A474E", function (c) { c.fillText(it[2], x, yb + 152); });
     });
-    a.fonte("500 25px Jost"); a.tinta(K.ink, function (c) { espacado(c, "CONFIRME SUA PRESENÇA ATÉ", cx, 1390, 7); });
-    a.fonte("italic 400 76px 'DM Serif Display'"); a.foil(function (c) { c.fillText("06 de novembro", cx, 1470); });
-    a.fonte("400 29px Jost"); a.tinta("#5A474E", function (c) { c.fillText("pelo WhatsApp, no botão abaixo do convite", cx, 1522); });
-    a.fonte("500 25px Jost"); a.foil(function (c) { espacado(c, "CONVITE INDIVIDUAL", cx, 1578, 9); });
+    a.fonte("500 23px Jost"); a.tinta(K.deep, function (c) { espacado(c, "COR DA ROUPA", cx, yb + 222, 5); });
+    [["Mulher:", "vestido azul marinho"], ["Homem:", "calça preta e blusa azul marinho"]].forEach(function (par, k) {
+      a.tinta("#3E3135", function (c) {
+        var tam = 36, w1, w2;
+        for (; tam > 20; tam--) {
+          c.font = "500 " + tam + "px Jost"; w1 = c.measureText(par[0]).width;
+          c.font = "400 " + tam + "px Jost"; w2 = c.measureText(" " + par[1]).width;
+          if (w1 + w2 <= 900) break;
+        }
+        var x0 = cx - (w1 + w2) / 2, y = yb + 268 + k * 50;
+        c.textAlign = "left";
+        c.font = "500 " + tam + "px Jost"; c.fillStyle = K.deep; c.fillText(par[0], x0, y);
+        c.font = "400 " + tam + "px Jost"; c.fillStyle = "#3E3135"; c.fillText(" " + par[1], x0 + w1, y);
+      });
+    });
+    a.fonte("500 25px Jost"); a.tinta(K.ink, function (c) { espacado(c, "CONFIRME SUA PRESENÇA ATÉ", cx, 1462, 7); });
+    a.fonte("italic 400 70px 'DM Serif Display'"); a.foil(function (c) { c.fillText("06 de novembro", cx, 1532); });
+    a.fonte("500 25px Jost"); a.foil(function (c) { espacado(c, "CONVITE INDIVIDUAL", cx, 1590, 9); });
   }
 
   function desenharVerso(a) {
