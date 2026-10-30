@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="only light">
+<meta name="theme-color" content="#F4ECE9">
 <title>Convite em Rosa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +39,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
-html { background: var(--ground); -webkit-tap-highlight-color: transparent; }
+html { background: var(--ground); -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   margin: 0; overflow: hidden; background: var(--ground); color: var(--ink);
   font-family: var(--f-body); font-weight: 300; font-size: 1.0625rem; line-height: 1.6;
@@ -1434,6 +1436,20 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   window.__semTresD = semTresD;
   $("gl").addEventListener("webglcontextlost", function (e) { e.preventDefault(); semTresD(); });
+
+  /* ================= Painel de diagnóstico: endereço com ?debug ================= */
+  if (/[?&]debug/.test(location.search)) {
+    var dbg = document.createElement("pre");
+    dbg.style.cssText = "position:fixed;left:6px;bottom:6px;z-index:99;margin:0;padding:6px 8px;font:11px/1.35 monospace;background:rgba(0,0,0,.8);color:#fff;border-radius:6px;pointer-events:none;white-space:pre-wrap;max-width:92vw";
+    document.body.appendChild(dbg);
+    var fpsN = 0, fpsV = 0, fpsT = performance.now();
+    (function f(t) { fpsN++; if (t - fpsT >= 1000) { fpsV = Math.round(fpsN * 1000 / (t - fpsT)); fpsN = 0; fpsT = t; } requestAnimationFrame(f); })(fpsT);
+    setInterval(function () {
+      var gpu = "?";
+      try { var g = $("gl").getContext("webgl2") || $("gl").getContext("webgl"), x = g && g.getExtension("WEBGL_debug_renderer_info"); gpu = g ? (x ? g.getParameter(x.UNMASKED_RENDERER_WEBGL) : "ok") : "sem webgl"; } catch (e) {}
+      dbg.textContent = "etapa " + etapa + " | 3D " + (Cena ? "ligado" : "DESLIGADO") + " | nivel " + nivel + (fixo ? " (fixo)" : "") + "\n" + fpsV + " fps | DPR " + (window.devicePixelRatio || 1) + " | tela " + innerWidth + "x" + innerHeight + "\nGPU " + gpu + "\nmem " + (navigator.deviceMemory || "?") + "GB | nucleos " + (navigator.hardwareConcurrency || "?") + " | escuro " + (matchMedia("(prefers-color-scheme: dark)").matches ? "sim" : "nao") + "\n" + navigator.userAgent.replace(/^Mozilla\/5.0 /, "").slice(0, 130);
+    }, 1000);
+  }
 
   /* ================= Início: prepara tudo antes da abertura ================= */
   function passo(fn) { return new Promise(function (ok, erro) { setTimeout(function () { try { ok(fn()); } catch (e) { erro(e); } }, 30); }); }
