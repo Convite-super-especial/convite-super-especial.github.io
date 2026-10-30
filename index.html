@@ -370,6 +370,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
       <p>Estamos preparando um momento lindo, cheio de detalhes pensados com carinho. Ele só fica completo com você aqui.</p>
       <p>Data: 11 de dezembro. Horário: em breve. Local: em breve. Cor da roupa: livre, você escolhe.</p>
       <p>Confirme sua presença até 06 de novembro pelo WhatsApp, no botão Confirmar presença.</p>
+      <p>Convite individual.</p>
     </div>
     <div class="center" id="fallback" hidden style="position:absolute;top:0;right:0;bottom:0;left:0;padding-bottom:120px">
       <div class="fallback-card" id="fallback-card"></div>
@@ -397,6 +398,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
       <p class="eyebrow">Confirmação</p>
       <h2 class="h2" id="rsvp-title">Você vem com <em>a gente?</em></h2>
       <p class="prazo" id="prazo">Responda até <b>06 de novembro</b></p>
+      <p class="prazo"><b>Convite individual</b>, válido para uma pessoa.</p>
     </div>
     <div class="choices">
       <a class="btn" id="aceito" href="#" target="_blank" rel="noopener"><span>Aceito</span></a>
@@ -739,9 +741,10 @@ document.addEventListener("DOMContentLoaded", function () {
       a.fonte("italic 400 56px 'DM Serif Display'"); a.foil(function (c) { c.fillText(it[1], x, yb + 122); });
       a.fonte("400 27px Jost"); a.tinta("#5A474E", function (c) { c.fillText(it[2], x, yb + 162); });
     });
-    a.fonte("500 25px Jost"); a.tinta(K.ink, function (c) { espacado(c, "CONFIRME SUA PRESENÇA ATÉ", cx, 1424, 7); });
-    a.fonte("italic 400 76px 'DM Serif Display'"); a.foil(function (c) { c.fillText("06 de novembro", cx, 1508); });
-    a.fonte("400 29px Jost"); a.tinta("#5A474E", function (c) { c.fillText("pelo WhatsApp, no botão abaixo do convite", cx, 1564); });
+    a.fonte("500 25px Jost"); a.tinta(K.ink, function (c) { espacado(c, "CONFIRME SUA PRESENÇA ATÉ", cx, 1390, 7); });
+    a.fonte("italic 400 76px 'DM Serif Display'"); a.foil(function (c) { c.fillText("06 de novembro", cx, 1470); });
+    a.fonte("400 29px Jost"); a.tinta("#5A474E", function (c) { c.fillText("pelo WhatsApp, no botão abaixo do convite", cx, 1522); });
+    a.fonte("500 25px Jost"); a.foil(function (c) { espacado(c, "CONVITE INDIVIDUAL", cx, 1578, 9); });
   }
 
   function desenharVerso(a) {
