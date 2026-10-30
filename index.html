@@ -116,7 +116,7 @@ button { font: inherit; color: inherit; }
 
 /* Abertura */
 /* Logo do Terceirão */
-.intro-logo { position: relative; height: clamp(130px, 22vh, 190px); aspect-ratio: 520 / 718; margin: 0 0 10px; animation: flutuaLogo 5s ease-in-out 3.2s infinite; }
+.intro-logo { position: relative; height: clamp(114px, 19vh, 166px); aspect-ratio: 520 / 718; margin: 0 0 10px; animation: flutuaLogo 5s ease-in-out 3.2s infinite; }
 .logo-halo { position: absolute; left: -45%; right: -45%; top: -22%; bottom: -22%; border-radius: 50%; background: radial-gradient(closest-side, rgba(223, 152, 172, .5), rgba(247, 225, 231, .28) 55%, transparent 74%); }
 .logo-sombra { position: absolute; top: 0; right: 0; bottom: 0; left: 0; filter: drop-shadow(0 14px 16px rgba(70, 45, 30, .3)); }
 .logo-img { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: var(--logo) center / contain no-repeat; }
@@ -1245,7 +1245,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .fromTo(".logo-halo", { scale: .3, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 2.8 * D, ease: "power2.out" }, 0)
       // o logo sobe do desfoque, cresce e assenta
       .fromTo(".logo-img", Object.assign({ scale: .55, autoAlpha: 0, y: 36, rotation: -5 }, fx(18)), Object.assign({ scale: 1, autoAlpha: 1, y: 0, rotation: 0, duration: 2.8 * D, ease: "power3.out", clearProps: "filter" }, fx(0)), .35 * D)
-      .add(blurIn(s.querySelectorAll(".il"), .5, 0, 2.2, "power2.out"), "-=1.4");
+      // as mensagens aparecem juntas com o logo, uma depois da outra
+      .add(blurIn(s.querySelectorAll(".il"), .4, 0, 2, "power2.out"), .6 * D);
     // depois de aparecer, a luz respira devagar
     G.to(".logo-halo", { scale: 1.12, duration: 2.6 * D, yoyo: true, repeat: -1, ease: "sine.inOut", delay: 3 * D });
   }
